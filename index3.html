@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sudoku Game</title>
+<style>
+  /* Add your CSS styles here */
+  .grid-container {
+    display: grid;
+    grid-template-columns: repeat(9, 40px);
+    grid-template-rows: repeat(9, 40px);
+    gap: 1px;
+    margin-left: 550px;
+    margin-top: 80px;
+  }
+  .cell {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #fbfcfc;
+    text-align: center;
+    line-height: 40px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 16px;
+    font-weight: bold;
+
+  }
+  .cell.correct {
+    background-color: lightgreen;
+  }
+  .cell.wrong {
+    background-color: salmon;
+  }
+  .nandhu button{
+    height: 50px;
+    width: 100px;
+    background-color: #f3f6f5;
+    border-radius: 10px;
+    color: rgb(15, 14, 14);
+    border: none;
+  }
+  .nandhu button:hover{
+    background-color:#00a6a083;
+  }
+  h1{
+    text-align: center;
+  }
+  .nandhu{
+    margin-left: 480px;
+
+  }
+  .grid-container > div:nth-child(3n) {
+    border-right: 6px solid #fcfefe;
+    
+  }
+  .grid-container > div:nth-child(9n) {
+    border-right: 6px solid #fbfdfd;
+  }
+  .grid-container > div:nth-child(n + 19):nth-child(-n + 27) {
+    border-bottom: 6px solid #fcfcfc;
+  }
+  .grid-container > div:nth-child(n + 46):nth-child(-n + 54) {
+    border-bottom: 6px solid #fafbfb;
+  }
+  .grid-container > div:nth-child(n + 73):nth-child(-n + 81) {
+    border-bottom: 6px solid #f3f6f6;
+  }
+  body {
+  margin: 0;
+  padding: 0;
+  background-image: url('img/image4.jpg');
+  background-size: cover;
+  background-position: center;
+}
+body h1{
+  font-size: 50px;
+  color: white;
+  font-weight: bold;
+}
+body h1:hover{
+  color:#0ee6e286;
+}
+ 
+</style>
+</head>
+<body>
+  <h1>Sudoku Game</h1>
+  <div class="nandhu">
+  <button onclick="startGame()">Start Game</button>
+  <button onclick="stopGame()">Stop Game</button>
+  <button onclick="newGame()">New Game</button>
+  <button onclick="checkSudoku()">Check</button>
+  <button><span id="timer">Time: 00:00</span></button>
+</div>
+  <div class="grid-container" id="grid-container"></div>
+
+
+<script>
+  let sudokuGrid;
+
+  let timerInterval;
+  let seconds = 0;
+  let minutes = 0;
+
+  function generateSudokuGrid() {
+    const gridContainer = document.getElementById('grid-container');
+    gridContainer.innerHTML = ''; // Clear existing grid
+
+    // Generate a grid of cells
+    for (let i = 0; i < 9; i++) {
+      for (let j = 0; j < 9; j++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.setAttribute('data-row', i);
+        cell.setAttribute('data-col', j);
+        cell.addEventListener('click', cellClicked);
+        cell.innerText = sudokuGrid[i][j] === 0 ? '' : sudokuGrid[i][j];
+        gridContainer.appendChild(cell);
+      }
+    }
+  }
+
+  function cellClicked(event) {
+    const selectedCell = event.target;
+    const selectedRow = selectedCell.getAttribute('data-row');
+    const selectedCol = selectedCell.getAttribute('data-col');
+    const newValue = prompt('Enter a number (1-9):');
+    if (newValue && !isNaN(newValue) && newValue >= 1 && newValue <= 9) {
+      sudokuGrid[selectedRow][selectedCol] = parseInt(newValue);
+      selectedCell.innerText = newValue;
+      checkCell(selectedCell);
+    } else if (newValue !== null) {
+      alert('Please enter a valid number (1-9)!');
+    }
+  }
+
+  function checkCell(cell) {
+    const row = parseInt(cell.getAttribute('data-row'));
+    const col = parseInt(cell.getAttribute('data-col'));
+    const value = parseInt(cell.innerText);
+
+    // Check row
+    for (let i = 0; i < 9; i++) {
+      if (i !== col && sudokuGrid[row][i] === value) {
+        markCellWrong(cell);
+        return;
+      }
+    }
+
+    // Check column
+    for (let i = 0; i < 9; i++) {
+      if (i !== row && sudokuGrid[i][col] === value) {
+        markCellWrong(cell);
+        return;
+      }
+    }
+
+    // Check 3x3 square
+    const squareRow = Math.floor(row / 3) * 3;
+    const squareCol = Math.floor(col / 3) * 3;
+    for (let i = squareRow; i < squareRow + 3; i++) {
+      for (let j = squareCol; j < squareCol + 3; j++) {
+        if ((i !== row || j !== col) && sudokuGrid[i][j] === value) {
+          markCellWrong(cell);
+          return;
+        }
+      }
+    }
+
+    markCellCorrect(cell);
+  }
+
+  function markCellCorrect(cell) {
+    cell.classList.remove('wrong');
+    cell.classList.add('correct');
+  }
+
+  function markCellWrong(cell) {
+    cell.classList.remove('correct');
+    cell.classList.add('wrong');
+  }
+
+  function startGame() {
+    clearInterval(timerInterval);
+    timerInterval = setInterval(updateTimer, 1000);
+  }
+
+  function stopGame() {
+    clearInterval(timerInterval);
+  }
+
+  function newGame() {
+    clearInterval(timerInterval);
+    seconds = 0;
+    minutes = 0;
+    document.getElementById('timer').innerText = 'Time: 00:00';
+    generateNewSudokuGrid();
+  }
+
+  function generateNewSudokuGrid() {
+    sudokuGrid = generateSudoku();
+    generateSudokuGrid();
+  }
+
+  function generateSudoku() {
+    const grid = [];
+    for (let i = 0; i < 9; i++) {
+      grid[i] = [];
+      for (let j = 0; j < 9; j++) {
+        grid[i][j] = 0; // Initialize all cells with 0
+      }
+    }
+
+    // Fill in some numbers
+    for (let i = 0; i < 9; i++) {
+      const randomCol = Math.floor(Math.random() * 9);
+      const randomNumber = Math.floor(Math.random() * 9) + 1;
+      grid[i][randomCol] = randomNumber;
+    }
+
+    return grid;
+  }
+
+  function updateTimer() {
+    seconds++;
+    if (seconds === 60) {
+      minutes++;
+      seconds = 0;
+    }
+    const formattedTime = `${padTime(minutes)}:${padTime(seconds)}`;
+    document.getElementById('timer').innerText = `Time: ${formattedTime}`;
+  }
+
+  function padTime(time) {
+    return time < 10 ? `0${time}` : time;
+  }
+
+  function checkSudoku() {
+    // Check if all cells are filled
+    for (let i = 0; i < 9; i++) {
+      for (let j = 0; j < 9; j++) {
+        if (sudokuGrid[i][j] === 0) {
+          alert('Please fill all cells before checking!');
+          return;
+        }
+      }
+    }
+
+    // Check rows
+    for (let i = 0; i < 9; i++) {
+      if (!checkArray(sudokuGrid[i])) {
+        alert('Invalid Sudoku!');
+        return;
+      }
+    }
+    // Check columns
+    for (let j = 0; j < 9; j++) {
+      const column = [];
+      for (let i = 0; i < 9; i++) {
+        column.push(sudokuGrid[i][j]);
+      }
+      if (!checkArray(column)) {
+        alert('Invalid Sudoku!');
+        return;
+      }
+    }
+    // Check 3x3 squares
+    for (let i = 0; i < 9; i += 3) {
+      for (let j = 0; j < 9; j += 3) {
+        const square = [];
+        for (let x = 0; x < 3; x++) {
+          for (let y = 0; y < 3; y++) {
+            square.push(sudokuGrid[i + x][j + y]);
+          }
+        }
+        if (!checkArray(square)) {
+          alert('Invalid Sudoku!');
+          return;
+        }
+      }
+    }
+    alert('Valid Sudoku!');
+  }
+
+  function checkArray(array) {
+    const counts = new Array(10).fill(0);
+    for (let i = 0; i < array.length; i++) {
+      const value = array[i];
+      if (value !== 0 && counts[value] === 1) {
+        return false;
+      }
+      counts[value]++;
+    }
+    return true;
+  }
+
+  generateNewSudokuGrid();
+</script>
+</body>
+</html>
